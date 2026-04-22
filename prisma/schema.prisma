@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model PanelAssignment {
+  id        String   @id @default(uuid())
+  set       String
+  adviser   String
+  chairman  String
+  members   String[]
+  secretary String
+  createdAt DateTime @default(now())
+}
