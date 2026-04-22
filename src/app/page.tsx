@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Users, UserCheck, AlertCircle, Info, ChevronDown, Save, CheckCircle, FileText, BookOpen, GraduationCap, Trash2 } from 'lucide-react';
 
 // Configuration Limits
@@ -28,7 +28,7 @@ const panelData = {
 };
 
 interface PanelRecord {
-  id: number;
+  id: string;
   title: string;
   students: string[];
   set: string;
@@ -48,6 +48,18 @@ export default function App() {
   const [students, setStudents] = useState(['', '', '', '']);
   const [savedPanels, setSavedPanels] = useState<PanelRecord[]>([]);
   const [showToast, setShowToast] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load saved panels from database on page load
+  useEffect(() => {
+    fetch('/api/assignments')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setSavedPanels(data);
+      })
+      .catch(err => console.error('Failed to load panels:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   // Helper functions to track limit usages
   const getSetCount = (setName: string) => savedPanels.filter(p => p.set === setName).length;
@@ -121,31 +133,51 @@ export default function App() {
   const hasStudents = students.some(s => s.trim() !== '');
   const isFormValid = finalPanel && limitErrors.length === 0 && titleProposal.trim() !== '' && hasStudents;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isFormValid) return;
 
-    setSavedPanels(prev => [...prev, {
-      id: Date.now(),
+    const payload = {
       title: titleProposal,
       students: students.filter(s => s.trim() !== ''),
       set: selectedSet,
       adviser: selectedAdviser,
-      panel: finalPanel
-    }]);
+      panel: finalPanel,
+    };
 
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    try {
+      const res = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const saved = await res.json();
+      setSavedPanels(prev => [saved, ...prev]);
 
-    // Reset form for new data
-    setSelectedSet('');
-    setSelectedAdviser('');
-    setSelectedChair('');
-    setTitleProposal('');
-    setStudents(['', '', '', '']);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+
+      // Reset form
+      setSelectedSet('');
+      setSelectedAdviser('');
+      setSelectedChair('');
+      setTitleProposal('');
+      setStudents(['', '', '', '']);
+    } catch (err) {
+      console.error('Failed to save panel:', err);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    setSavedPanels(prev => prev.filter(p => p.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch('/api/assignments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      setSavedPanels(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      console.error('Failed to delete panel:', err);
+    }
   };
 
   return (

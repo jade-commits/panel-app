@@ -8,6 +8,8 @@ datasource db {
 
 model PanelAssignment {
   id        String   @id @default(uuid())
+  title     String
+  students  String[]
   set       String
   adviser   String
   chairman  String
