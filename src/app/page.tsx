@@ -27,21 +27,34 @@ const panelData = {
   }
 };
 
+interface PanelRecord {
+  id: number;
+  title: string;
+  students: string[];
+  set: string;
+  adviser: string;
+  panel: {
+    chairman: string;
+    members: string[];
+    secretary: string;
+  };
+}
+
 export default function App() {
   const [selectedSet, setSelectedSet] = useState('');
   const [selectedAdviser, setSelectedAdviser] = useState('');
   const [selectedChair, setSelectedChair] = useState('');
   const [titleProposal, setTitleProposal] = useState('');
   const [students, setStudents] = useState(['', '', '', '']);
-  const [savedPanels, setSavedPanels] = useState([]);
+  const [savedPanels, setSavedPanels] = useState<PanelRecord[]>([]);
   const [showToast, setShowToast] = useState(false);
 
   // Helper functions to track limit usages
-  const getSetCount = (setName) => savedPanels.filter(p => p.set === setName).length;
-  const getAdviserCount = (name) => savedPanels.filter(p => p.adviser === name).length;
-  const getChairCount = (name) => savedPanels.filter(p => p.panel.chairman === name).length;
+  const getSetCount = (setName: string) => savedPanels.filter(p => p.set === setName).length;
+  const getAdviserCount = (name: string) => savedPanels.filter(p => p.adviser === name).length;
+  const getChairCount = (name: string) => savedPanels.filter(p => p.panel.chairman === name).length;
 
-  const handleStudentChange = (index, value) => {
+  const handleStudentChange = (index: number, value: string) => {
     const newStudents = [...students];
     newStudents[index] = value;
     setStudents(newStudents);
@@ -50,19 +63,19 @@ export default function App() {
   // Get all available faculty for the selected set to populate the Adviser dropdown
   const availableFaculty = useMemo(() => {
     if (!selectedSet) return [];
-    const set = panelData[selectedSet];
+    const set = panelData[selectedSet as keyof typeof panelData];
     return [...set.chairs, ...set.members];
   }, [selectedSet]);
 
   // Handle Set Change (reset adviser and chair)
-  const handleSetChange = (e) => {
+  const handleSetChange = (e: any) => {
     setSelectedSet(e.target.value);
     setSelectedAdviser('');
     setSelectedChair('');
   };
 
   // Handle Adviser Change
-  const handleAdviserChange = (e) => {
+  const handleAdviserChange = (e: any) => {
     const newAdviser = e.target.value;
     setSelectedAdviser(newAdviser);
     // If the currently selected chair was chosen as the new adviser, reset the chair
@@ -74,7 +87,7 @@ export default function App() {
   // Get available chairs based on set and chosen adviser
   const availableChairs = useMemo(() => {
     if (!selectedSet) return [];
-    const set = panelData[selectedSet];
+    const set = panelData[selectedSet as keyof typeof panelData];
     return set.chairs.filter(chair => chair !== selectedAdviser);
   }, [selectedSet, selectedAdviser]);
 
@@ -82,7 +95,7 @@ export default function App() {
   const finalPanel = useMemo(() => {
     if (!selectedSet || !selectedAdviser || !selectedChair) return null;
 
-    const set = panelData[selectedSet];
+    const set = panelData[selectedSet as keyof typeof panelData];
 
     // Collect everyone in the set
     const allSetFaculty = [...set.chairs, ...set.members];
@@ -100,7 +113,7 @@ export default function App() {
   }, [selectedSet, selectedAdviser, selectedChair]);
 
   // Check if current selection violates limits
-  const limitErrors = [];
+  const limitErrors: string[] = [];
   if (selectedSet && getSetCount(selectedSet) >= MAX_SET) limitErrors.push(`Set ${selectedSet} limit reached (${MAX_SET} max).`);
   if (selectedAdviser && getAdviserCount(selectedAdviser) >= MAX_ADVISER) limitErrors.push(`Adviser limit reached for ${selectedAdviser} (${MAX_ADVISER} max).`);
   if (selectedChair && getChairCount(selectedChair) >= MAX_CHAIR) limitErrors.push(`Chairman limit reached for ${selectedChair} (${MAX_CHAIR} max).`);
@@ -131,7 +144,7 @@ export default function App() {
     setStudents(['', '', '', '']);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: number) => {
     setSavedPanels(prev => prev.filter(p => p.id !== id));
   };
 
